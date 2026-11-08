@@ -78,8 +78,20 @@ func main() {
 	flag.Parse()
 
 	e := NewEngine(*flagServer)
-	if *flagServer != "" {
-		e.SetServer(*flagServer)
+	cfg := LoadConfig()
+	server := *flagServer
+	if server == "" {
+		server = cfg.Server
+	}
+	if server != "" {
+		e.SetServer(server)
+	}
+	e.SyncText = cfg.SyncText
+	e.SyncImages = cfg.SyncImages
+	if cfg.Host {
+		if err := e.StartHost(); err != nil {
+			e.setStatus(false, "Cannot host: "+err.Error())
+		}
 	}
 
 	stop := make(chan struct{})
@@ -113,16 +125,38 @@ func main() {
 			On   bool   `json:"on"`
 		}
 		json.NewDecoder(r.Body).Decode(&body)
-		e.mu.Lock()
 		switch body.Name {
 		case "text":
+			e.mu.Lock()
 			e.SyncText = body.On
+			e.mu.Unlock()
+			cfg.SyncText = body.On
 		case "images":
+			e.mu.Lock()
 			e.SyncImages = body.On
+			e.mu.Unlock()
+			cfg.SyncImages = body.On
 		case "pause":
+			e.mu.Lock()
 			e.Paused = body.On
+			e.mu.Unlock()
+		case "host":
+			if body.On {
+				if err := e.StartHost(); err != nil {
+					e.setStatus(false, "Cannot host: "+err.Error())
+					w.WriteHeader(500)
+					return
+				}
+				cfg.Host = true
+			} else {
+				e.StopHost()
+				cfg.Host = false
+			}
+		case "boot":
+			SetStartOnBoot(body.On)
+			cfg.StartOnBoot = body.On
 		}
-		e.mu.Unlock()
+		SaveConfig(cfg)
 		w.WriteHeader(200)
 	})
 	mux.HandleFunc("/api/send", func(w http.ResponseWriter, r *http.Request) {

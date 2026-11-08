@@ -81,6 +81,15 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="label">This device</div>
+    <div class="toggles">
+      <label class="toggle"><input type="checkbox" id="tHost"> Host for the network</label>
+      <label class="toggle"><input type="checkbox" id="tBoot"> Start with system</label>
+    </div>
+    <div class="v" id="hostLine" style="margin-top:10px;color:#8b98a8;display:none"></div>
+  </div>
+
   <div class="card" id="recent">
     <div class="label">Recent</div>
     <div id="history"><div class="empty">Nothing yet. Copy something on either machine.</div></div>
@@ -116,6 +125,8 @@ $("send").onclick = () => fetch("/api/send", { method: "POST" });
 $("tText").onchange = (e) => toggle("text", e.target.checked);
 $("tImages").onchange = (e) => toggle("images", e.target.checked);
 $("tPause").onchange = (e) => toggle("pause", e.target.checked);
+$("tHost").onchange = (e) => toggle("host", e.target.checked);
+$("tBoot").onchange = (e) => toggle("boot", e.target.checked);
 
 function render(state) {
   $("dot").className = "dot" + (state.connected ? " on" : "");
@@ -124,6 +135,16 @@ function render(state) {
   $("tText").checked = state.syncText;
   $("tImages").checked = state.syncImages;
   $("tPause").checked = state.paused;
+  $("tHost").checked = !!state.hosting;
+  const line = $("hostLine");
+  if (state.hosting) {
+    line.style.display = "block";
+    line.textContent = "Serving this clipboard on " + (state.hostAddr || "port 1717");
+    $("server").parentElement.style.display = "none";
+  } else {
+    line.style.display = "none";
+    $("server").parentElement.style.display = "flex";
+  }
 
   const list = state.history || [];
   if (!list.length) {

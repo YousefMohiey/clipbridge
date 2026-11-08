@@ -1,0 +1,11 @@
+Package: clipbridge
+Version: 0.3.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: xclip
+Maintainer: Yousef Mohiey <yousefmohiey@users.noreply.github.com>
+Description: Shared clipboard over your local network
+ Copy text or an image on one device and paste it on another.
+ Everything stays on your LAN. No account, no cloud.
+ One device is the host, the rest connect to it automatically.

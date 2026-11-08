@@ -40,11 +40,26 @@ jobs:
           GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
             go build -trimpath -ldflags "-H windowsgui -s -w" -o "$GITHUB_WORKSPACE/ClipBridge.exe" .
 
-      - name: Linux client
+      - name: Linux binary
         working-directory: apps/desktop
         run: |
           GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-            go build -trimpath -ldflags "-s -w" -o "$GITHUB_WORKSPACE/clipbridge-linux" .
+            go build -trimpath -ldflags "-s -w" -o "$GITHUB_WORKSPACE/clipbridge" .
+
+      - name: Linux package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ROOT="$GITHUB_WORKSPACE/pkgroot"
+          mkdir -p "$ROOT/DEBIAN" "$ROOT/usr/bin" \
+                   "$ROOT/usr/share/applications" \
+                   "$ROOT/usr/share/icons/hicolor/256x256/apps"
+          sed "s/^Version: .*/Version: $VERSION/" packaging/deb/DEBIAN/control > "$ROOT/DEBIAN/control"
+          install -m 755 "$GITHUB_WORKSPACE/clipbridge" "$ROOT/usr/bin/clipbridge"
+          install -m 644 packaging/clipbridge.desktop "$ROOT/usr/share/applications/clipbridge.desktop"
+          install -m 644 packaging/icons/clipbridge.png \
+            "$ROOT/usr/share/icons/hicolor/256x256/apps/clipbridge.png"
+          dpkg-deb --root-owner-group --build "$ROOT" \
+            "$GITHUB_WORKSPACE/clipbridge_${VERSION}_amd64.deb"
 
       - name: Android app
         working-directory: android
@@ -53,17 +68,10 @@ jobs:
       - name: Collect Android build
         run: cp android/app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/ClipBridge.apk"
 
-      - name: Host package
-        run: |
-          mkdir -p stage/clipbridge
-          cp host/clipd.py host/clipbridge.service host/install.sh stage/clipbridge/
-          chmod +x stage/clipbridge/install.sh
-          tar -czf "$GITHUB_WORKSPACE/clipbridge-host.tar.gz" -C stage clipbridge
-
       - name: Checksums
         run: |
           cd "$GITHUB_WORKSPACE"
-          sha256sum ClipBridge.exe clipbridge-linux ClipBridge.apk clipbridge-host.tar.gz > SHA256SUMS.txt
+          sha256sum ClipBridge.exe clipbridge_*_amd64.deb ClipBridge.apk > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Publish
@@ -72,8 +80,7 @@ jobs:
         with:
           files: |
             ClipBridge.exe
-            clipbridge-linux
+            clipbridge_*_amd64.deb
             ClipBridge.apk
-            clipbridge-host.tar.gz
             SHA256SUMS.txt
           generate_release_notes: true

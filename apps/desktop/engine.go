@@ -44,6 +44,10 @@ type Engine struct {
 	history   []Clip
 	busy      bool
 
+	hosting  bool
+	host     *Host
+	hostAddr string
+
 	client *http.Client
 }
 
@@ -82,11 +86,56 @@ func (e *Engine) SnapshotJSON() []byte {
 		"paused":     e.Paused,
 		"syncText":   e.SyncText,
 		"syncImages": e.SyncImages,
+		"hosting":    e.hosting,
+		"hostAddr":   e.hostAddr,
 		"history":    hist,
 	}
 	e.mu.Unlock()
 	b, _ := json.Marshal(out)
 	return b
+}
+
+// StartHost makes this device the clipboard server for the network.
+func (e *Engine) StartHost() error {
+	h := NewHost()
+	h.OnClip = func(kind, text string, png []byte, fromRemote bool) {
+		origin := "this device"
+		if fromRemote {
+			origin = "guest"
+		}
+		body := text
+		if kind == "image" {
+			body = "image " + itoa(len(png)/1024) + " KB"
+		}
+		e.remember(Clip{When: time.Now(), Kind: kind, Origin: origin,
+			Snippet: snippet(body), Text: text, PNG: png})
+	}
+	if err := h.Start(); err != nil {
+		return err
+	}
+	e.mu.Lock()
+	e.host = h
+	e.hosting = true
+	e.hostAddr = h.Addr()
+	e.connected = true
+	e.message = "Hosting"
+	e.mu.Unlock()
+	return nil
+}
+
+// StopHost stops serving; the device goes back to being a client.
+func (e *Engine) StopHost() {
+	e.mu.Lock()
+	h := e.host
+	e.host = nil
+	e.hosting = false
+	e.hostAddr = ""
+	e.connected = false
+	e.message = "Stopped hosting"
+	e.mu.Unlock()
+	if h != nil {
+		h.Stop()
+	}
 }
 
 func hashOf(kind string, png []byte, text string) string {
@@ -136,6 +185,12 @@ func (e *Engine) poll() {
 	e.mu.Lock()
 	if e.busy || e.Paused {
 		e.mu.Unlock()
+		return
+	}
+	if e.hosting {
+		addr := e.hostAddr
+		e.mu.Unlock()
+		e.setStatus(true, "Hosting on "+addr)
 		return
 	}
 	e.busy = true

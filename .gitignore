@@ -4,4 +4,6 @@ app/obj/
 .venv/
 *.exe
 *.zip
+*.deb
+packaging/deb/usr/
 __pycache__/
