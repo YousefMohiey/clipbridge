@@ -1,0 +1,56 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Windows client
+        working-directory: apps/desktop
+        run: |
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 \
+            go build -trimpath -ldflags "-H windowsgui -s -w" -o "$GITHUB_WORKSPACE/ClipBridge.exe" .
+
+      - name: Linux client
+        working-directory: apps/desktop
+        run: |
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            go build -trimpath -ldflags "-s -w" -o "$GITHUB_WORKSPACE/clipbridge-linux" .
+
+      - name: Host package
+        run: |
+          mkdir -p stage/clipbridge
+          cp host/clipd.py host/clipbridge.service host/install.sh stage/clipbridge/
+          chmod +x stage/clipbridge/install.sh
+          tar -czf "$GITHUB_WORKSPACE/clipbridge-host.tar.gz" -C stage clipbridge
+
+      - name: Checksums
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          sha256sum ClipBridge.exe clipbridge-linux clipbridge-host.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ClipBridge.exe
+            clipbridge-linux
+            clipbridge-host.tar.gz
+            SHA256SUMS.txt
+          generate_release_notes: true

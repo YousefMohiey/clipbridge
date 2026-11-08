@@ -9,6 +9,7 @@ import base64
 import hashlib
 import json
 import os
+import socket
 import subprocess
 import threading
 import time
@@ -17,7 +18,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 PORT = 1717
 POLL = 0.4
 DISPLAY = os.environ.get("DISPLAY", ":0")
-XCLIP = os.path.expanduser("~/.local/opt/xclip/usr/bin/xclip")
+XCLIP = next(
+    (p for p in ("/usr/bin/xclip",
+                 "/usr/local/bin/xclip",
+                 os.path.expanduser("~/.local/opt/xclip/usr/bin/xclip"))
+     if os.path.exists(p)),
+    "xclip",
+)
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 lock = threading.Lock()
@@ -31,8 +38,13 @@ def env():
     return e
 
 
-def run(args, stdin=None):
-    return subprocess.run(args, input=stdin, capture_output=True, env=env(), timeout=10)
+def run(args, stdin=None, capture=True):
+    if capture:
+        return subprocess.run(args, input=stdin, capture_output=True, env=env(), timeout=10)
+    # Writes: xclip forks a child that keeps serving the selection and holds
+    # the pipe open, so capturing output here would block until the timeout.
+    return subprocess.run(args, input=stdin, stdout=subprocess.DEVNULL,
+                          stderr=subprocess.DEVNULL, env=env(), timeout=10)
 
 
 def targets():
@@ -62,9 +74,9 @@ def write_clip(kind, text, png):
         tmp = "/tmp/clipbridge.png"
         with open(tmp, "wb") as f:
             f.write(png)
-        run([XCLIP, "-selection", "clipboard", "-t", "image/png", "-i", tmp])
+        run([XCLIP, "-selection", "clipboard", "-t", "image/png", "-i", tmp], capture=False)
     else:
-        run([XCLIP, "-selection", "clipboard", "-i"], stdin=text.encode("utf-8"))
+        run([XCLIP, "-selection", "clipboard", "-i"], stdin=text.encode("utf-8"), capture=False)
 
 
 def digest(kind, text, png):
@@ -206,7 +218,21 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(500, json.dumps({"error": str(exc)}).encode())
 
 
+def announce():
+    """Tell the LAN this machine is a ClipBridge host."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    payload = json.dumps({"app": "clipbridge", "port": PORT}).encode()
+    while True:
+        try:
+            sock.sendto(payload, ("255.255.255.255", 1719))
+        except Exception:
+            pass
+        time.sleep(2)
+
+
 if __name__ == "__main__":
     threading.Thread(target=watcher, daemon=True).start()
+    threading.Thread(target=announce, daemon=True).start()
     srv = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     srv.serve_forever()
