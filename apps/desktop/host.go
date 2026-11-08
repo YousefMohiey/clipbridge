@@ -95,6 +95,11 @@ func (h *Host) Start() error {
 			return
 		}
 		if len(ctype) >= 5 && ctype[:5] == "image" {
+			// Mark the hash before touching the clipboard, so the watcher does
+			// not mistake our own write for a fresh local clip.
+			h.mu.Lock()
+			h.lastHash = hashOf("image", body, "")
+			h.mu.Unlock()
 			if !writePNG(body) {
 				http.Error(w, "cannot set image", http.StatusInternalServerError)
 				return
@@ -106,6 +111,9 @@ func (h *Host) Start() error {
 				http.Error(w, "bad json", http.StatusBadRequest)
 				return
 			}
+			h.mu.Lock()
+			h.lastHash = hashOf("text", nil, payload.Text)
+			h.mu.Unlock()
 			if !writeText(payload.Text) {
 				http.Error(w, "cannot set text", http.StatusInternalServerError)
 				return

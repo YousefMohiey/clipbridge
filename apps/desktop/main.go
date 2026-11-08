@@ -142,10 +142,15 @@ func main() {
 			e.mu.Unlock()
 		case "host":
 			if body.On {
-				if err := e.StartHost(); err != nil {
-					e.setStatus(false, "Cannot host: "+err.Error())
-					w.WriteHeader(500)
-					return
+				e.mu.Lock()
+				already := e.hosting
+				e.mu.Unlock()
+				if !already {
+					if err := e.StartHost(); err != nil {
+						e.setStatus(false, "Cannot host: "+err.Error())
+						w.WriteHeader(500)
+						return
+					}
 				}
 				cfg.Host = true
 			} else {

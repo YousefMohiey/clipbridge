@@ -105,7 +105,7 @@ func (e *Engine) StartHost() error {
 		}
 		body := text
 		if kind == "image" {
-			body = "image " + itoa(len(png)/1024) + " KB"
+			body = sizeText(len(png))
 		}
 		e.remember(Clip{When: time.Now(), Kind: kind, Origin: origin,
 			Snippet: snippet(body), Text: text, PNG: png})
@@ -240,7 +240,7 @@ func (e *Engine) poll() {
 					if !known {
 						writePNG(png)
 						e.remember(Clip{When: time.Now(), Kind: "image", Origin: "host",
-							Snippet: "image " + itoa(len(png)/1024) + " KB", PNG: png})
+							Snippet: sizeText(len(png)), PNG: png})
 						e.mu.Lock()
 						e.lastHash = h
 						e.mu.Unlock()
@@ -279,7 +279,7 @@ func localClip(textOn, imageOn bool) *Clip {
 	if imageOn {
 		if png := readPNG(); len(png) > 0 {
 			return &Clip{When: time.Now(), Kind: "image", Origin: "this PC",
-				Snippet: "image " + itoa(len(png)/1024) + " KB", PNG: png}
+				Snippet: sizeText(len(png)), PNG: png}
 		}
 	}
 	if textOn {
@@ -342,4 +342,11 @@ func itoa(v int) string {
 		v /= 10
 	}
 	return string(buf[i:])
+}
+
+func sizeText(n int) string {
+	if n < 1024 {
+		return "image " + itoa(n) + " B"
+	}
+	return "image " + itoa(n/1024) + " KB"
 }
