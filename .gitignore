@@ -1,0 +1,7 @@
+dist/
+app/bin/
+app/obj/
+.venv/
+*.exe
+*.zip
+__pycache__/
