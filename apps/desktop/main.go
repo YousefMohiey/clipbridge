@@ -16,7 +16,7 @@ import (
 //go:embed app.html
 var uiHTML []byte
 
-const appVersion = "0.8.0"
+const appVersion = "0.9.0"
 
 var (
 	flagServer = flag.String("server", "", "host address, for example http://192.168.1.8:1717")
@@ -124,6 +124,11 @@ func main() {
 	url := fmt.Sprintf("http://127.0.0.1:%d", port)
 	writeUIPort(port)
 	logf("window on %s", url)
+
+	prepareWindow()
+	if startNative(e, &cfg, url) {
+		return
+	}
 
 	if *flagOpen && !*flagHidden {
 		openBrowser(url)
