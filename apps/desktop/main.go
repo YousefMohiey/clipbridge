@@ -77,6 +77,13 @@ func discover(e *Engine, stop <-chan struct{}) {
 func main() {
 	flag.Parse()
 
+	if !acquireInstance() {
+		if p := readUIPort(); p > 0 {
+			openBrowser(fmt.Sprintf("http://127.0.0.1:%d", p))
+		}
+		return
+	}
+
 	e := NewEngine(*flagServer)
 	cfg := LoadConfig()
 	server := *flagServer
@@ -201,12 +208,35 @@ func main() {
 		w.WriteHeader(200)
 	})
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *flagUI)
-	go http.ListenAndServe(addr, mux)
+	port, err := serveUI(mux, *flagUI)
+	if err != nil {
+		logf("cannot open the window: %v", err)
+		return
+	}
+	if port != *flagUI {
+		logf("port %d was taken, window moved to %d", *flagUI, port)
+	}
+	url := fmt.Sprintf("http://127.0.0.1:%d", port)
+	writeUIPort(port)
+	logf("window on %s", url)
 
 	if *flagOpen && !*flagHidden {
-		openBrowser("http://" + addr)
+		openBrowser(url)
 	}
 
 	select {}
+}
+
+// serveUI binds the window to the first free port, so a busy port cannot
+// leave the app running with no window at all.
+func serveUI(mux *http.ServeMux, want int) (int, error) {
+	for p := want; p < want+40; p++ {
+		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
+		if err != nil {
+			continue
+		}
+		go http.Serve(ln, mux)
+		return p, nil
+	}
+	return 0, fmt.Errorf("no free port near %d", want)
 }

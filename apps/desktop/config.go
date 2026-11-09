@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"time"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,6 +31,40 @@ func configDir() string {
 }
 
 func configPath() string { return filepath.Join(configDir(), "config.json") }
+
+// logf appends a line to app.log next to the config. The Windows build has no
+// console, so this is the only place a problem can be seen.
+func logf(format string, args ...any) {
+	_ = os.MkdirAll(configDir(), 0o755)
+	f, err := os.OpenFile(filepath.Join(configDir(), "app.log"),
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	line := time.Now().Format("2006-01-02 15:04:05 ") + fmt.Sprintf(format, args...) + "\n"
+	_, _ = f.WriteString(line)
+}
+
+func uiPortPath() string { return filepath.Join(configDir(), "ui.port") }
+
+func writeUIPort(port int) {
+	_ = os.MkdirAll(configDir(), 0o755)
+	_ = os.WriteFile(uiPortPath(), []byte(fmt.Sprintf("%d", port)), 0o644)
+}
+
+func readUIPort() int {
+	data, err := os.ReadFile(uiPortPath())
+	if err != nil {
+		return 0
+	}
+	var p int
+	_, err = fmt.Sscanf(string(data), "%d", &p)
+	if err != nil {
+		return 0
+	}
+	return p
+}
 
 func LoadConfig() Config {
 	cfg := Config{SyncText: true, SyncImages: true}
