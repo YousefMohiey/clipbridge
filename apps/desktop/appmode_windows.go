@@ -31,6 +31,7 @@ func openAppWindow(url string) bool {
 		cmd := exec.Command(exe,
 			"--app="+url,
 			"--window-size=900,740",
+			"--user-data-dir="+filepath.Join(configDir(), "browser"),
 			"--window-position=220,120",
 			"--no-first-run",
 			"--no-default-browser-check",

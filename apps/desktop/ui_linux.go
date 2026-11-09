@@ -58,7 +58,9 @@ func openAppWindow(url string) bool {
 		cmd := exec.Command(path,
 			"--app="+url,
 			"--window-size=900,740",
+			"--window-position=120,90",
 			"--class=ClipBridge",
+			"--user-data-dir="+filepath.Join(configDir(), "browser"),
 			"--no-first-run",
 			"--no-default-browser-check",
 		)
