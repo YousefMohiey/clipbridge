@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipBridge</title>
+<style>
+  :root {
+    --page: #0b0d10;
+    --panel: #12161b;
+    --raise: #171c23;
+    --line: #232a33;
+    --ink: #e8edf2;
+    --muted: #9aa8b8;
+    --faint: #7c8a9b;
+    --brand: #4c8dff;
+    --live: #34d399;
+    --warn: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 14px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    cursor: default;
+    overflow: hidden;
+  }
+  ::selection { background: rgba(76, 141, 255, .35); color: var(--ink); }
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-thumb { background: #2a333e; border-radius: 6px; border: 3px solid var(--page); }
+  ::-webkit-scrollbar-thumb:hover { background: #384454; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  main {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    padding: 26px 26px 16px;
+  }
+
+  /* the one hero: what this device is doing right now */
+  .state { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 22px; }
+  .beacon {
+    width: 10px; height: 10px; border-radius: 50%;
+    margin-top: 12px; flex: none;
+    background: var(--warn);
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+    transition: background .28s ease;
+  }
+  .beacon.live { background: var(--live); }
+  .beacon.pulse { animation: pulse 1.1s ease-out 1; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, .45); }
+    100% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
+  }
+  .state-body { min-width: 0; flex: 1; }
+  .state-word { font-size: 27px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; }
+  .state-address {
+    margin-top: 6px;
+    font: 13px/1.4 ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .state-action { align-self: center; }
+
+  button {
+    font: inherit; color: var(--ink); cursor: pointer;
+    background: var(--raise); border: 1px solid var(--line);
+    border-radius: 9px; padding: 8px 13px;
+    transition: background .16s ease, border-color .16s ease, transform .16s ease;
+  }
+  button:hover { background: #1d242c; border-color: #303a46; }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #08111f; font-weight: 600; }
+  button.primary:hover { background: #62a0ff; border-color: #62a0ff; }
+  button:hover { background: #202832; }
+  button:disabled { color: var(--faint); background: var(--panel); border-color: var(--line); cursor: not-allowed; }
+
+  .controls {
+    display: flex; align-items: center; gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .switch { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); cursor: pointer; font-size: 13.5px; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .track {
+    width: 34px; height: 19px; border-radius: 10px; background: #222a34;
+    border: 1px solid var(--line); position: relative; transition: background .18s ease, border-color .18s ease;
+  }
+  .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px;
+    border-radius: 50%; background: #6b7889; transition: transform .18s cubic-bezier(.2,.8,.2,1), background .18s ease;
+  }
+  .switch input:checked + .track { background: #1d3350; border-color: #33507f; }
+  .switch input:checked + .track::after { transform: translateX(15px); background: var(--brand); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .switch.paused input:checked + .track { background: #3a2a2a; border-color: #5c3a3a; }
+  .switch.paused input:checked + .track::after { background: var(--warn); }
+  .switch.small { font-size: 12.5px; color: var(--muted); gap: 8px; }
+  .switch.small .track { width: 30px; height: 17px; }
+  .switch.small .track::after { width: 11px; height: 11px; }
+  .switch.small input:checked + .track::after { transform: translateX(13px); }
+
+  .divider { width: 1px; height: 18px; background: var(--line); }
+
+  .addr { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .addr input {
+    flex: 1; min-width: 0;
+    font: 13px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color: var(--ink); background: transparent;
+    border: 1px solid transparent; border-radius: 7px;
+    padding: 5px 8px; margin-left: -9px; outline: none;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .addr input::placeholder { color: var(--faint); }
+  .addr input:hover { border-color: var(--line); }
+  .addr input:focus { border-color: #35507a; background: var(--panel); }
+  button.mini { padding: 5px 10px; font-size: 12.5px; }
+  .addr button.mini { visibility: hidden; }
+  .addr.dirty button.mini { visibility: visible; }
+
+  .clips { min-height: 0; display: flex; flex-direction: column; padding-top: 16px; }
+  .clips-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    color: var(--faint); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    padding-bottom: 6px;
+  }
+  .list { overflow-y: auto; min-height: 0; flex: 1; }
+  .row {
+    display: grid; grid-template-columns: 68px 54px minmax(0, 1fr) auto;
+    align-items: center; gap: 12px;
+    padding: 10px 8px; margin: 0 -8px;
+    border-radius: 8px; cursor: pointer;
+    border-bottom: 1px solid #1a2027;
+    transition: background .14s ease;
+  }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: rgba(255,255,255,.035); }
+  .row:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+  .time { font: 12px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .kind { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .kind.image { color: #8fb4ff; }
+  .preview { min-width: 0; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .origin { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
+  .empty { color: var(--muted); font-size: 13.5px; padding: 12px 2px; }
+  .row.enter { animation: enter .34s cubic-bezier(.2,.8,.2,1); }
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(-6px); filter: blur(2px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+
+  footer {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid var(--line); padding-top: 11px; margin-top: 10px;
+    color: var(--faint); font-size: 11.5px;
+  }
+  footer b { color: var(--muted); font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section class="state">
+    <span class="beacon" id="beacon"></span>
+    <div class="state-body">
+      <div class="state-word" id="stateWord">Starting</div>
+      <div class="addr" id="addrRow">
+        <input type="text" id="hostField" spellcheck="false" placeholder="no host found on this network">
+        <button id="applyBtn" class="mini">Apply</button>
+      </div>
+      <div class="state-address" id="stateAddress">looking for a host on this network</div>
+    </div>
+    <button class="primary state-action" id="sendBtn" title="Push what is copied here to the other device">Send now</button>
+  </section>
+
+  <section class="controls">
+    <label class="switch"><input type="checkbox" id="swText" checked><span class="track"></span>Text</label>
+    <label class="switch"><input type="checkbox" id="swImages" checked><span class="track"></span>Images</label>
+    <span class="divider"></span>
+    <label class="switch"><input type="checkbox" id="swHost"><span class="track"></span>Host here</label>
+    <span class="divider"></span>
+    <label class="switch paused"><input type="checkbox" id="swPause"><span class="track"></span>Pause</label>
+  </section>
+
+  <section class="clips">
+    <div class="clips-head"><span>Recent</span><span id="count"></span></div>
+    <div class="list" id="list" tabindex="0">
+      <div class="empty" id="empty">Nothing yet. Copy text or a screenshot on either device.</div>
+    </div>
+  </section>
+
+  <footer>
+    <label class="switch small"><input type="checkbox" id="swBoot"><span class="track"></span>Start with Windows</label>
+    <span id="footVersion">ClipBridge</span>
+  </footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let lastSig = "";
+let known = 0;
+
+function post(path, body) {
+  return fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {})
+  });
+}
+
+$("swText").onchange = (e) => post("/api/toggle", { name: "text", on: e.target.checked });
+$("swImages").onchange = (e) => post("/api/toggle", { name: "images", on: e.target.checked });
+$("swPause").onchange = (e) => post("/api/toggle", { name: "pause", on: e.target.checked });
+$("swHost").onchange = (e) => post("/api/toggle", { name: "host", on: e.target.checked }).then(() => setTimeout(poll, 300));
+$("swBoot").onchange = (e) => post("/api/toggle", { name: "boot", on: e.target.checked });
+$("sendBtn").onclick = () => post("/api/send");
+$("applyBtn").onclick = () => {
+  const v = $("hostField").value.trim();
+  if (!v) return;
+  $("addrRow").classList.remove("dirty");
+  post("/api/server", { server: v }).then(() => setTimeout(poll, 300));
+};
+$("hostField").addEventListener("keydown", (e) => { if (e.key === "Enter") { $("applyBtn").click(); $("addrRow").classList.remove("dirty"); } });
+$("hostField").addEventListener("input", () => {
+  const shown = $("hostField").value.trim().replace(/^https?:\/\//, "");
+  const current = (window.__server || "").replace(/^https?:\/\//, "");
+  $("addrRow").classList.toggle("dirty", shown !== current);
+});
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function render(state) {
+  const hosting = !!state.hosting;
+  const connected = !!state.connected;
+  const beacon = $("beacon");
+  const word = hosting ? "Hosting" : connected ? "Connected" : "Offline";
+
+  if ($("stateWord").textContent !== word) {
+    $("stateWord").textContent = word;
+    beacon.className = "beacon" + (hosting || connected ? " live" : "");
+    if (hosting || connected) {
+      beacon.classList.add("pulse");
+      setTimeout(() => beacon.classList.remove("pulse"), 1200);
+    }
+  } else {
+    beacon.className = "beacon" + (hosting || connected ? " live" : "");
+  }
+
+  const address = hosting ? state.hostAddr : state.server;
+  $("addrRow").style.display = hosting ? "none" : "flex";
+  $("stateAddress").style.display = hosting ? "block" : "none";
+  window.__server = address || "";
+  if (hosting) {
+    $("stateAddress").textContent = "serving this clipboard on " + (address || "port 1717");
+  } else if (document.activeElement !== $("hostField")) {
+    const s = String(state.server || "").replace(/^https?:\/\//, "");
+    if ($("hostField").value !== s) $("hostField").value = s;
+  }
+
+  $("swText").checked = !!state.syncText;
+  $("swImages").checked = !!state.syncImages;
+  $("swPause").checked = !!state.paused;
+  $("swHost").checked = hosting;
+  $("sendBtn").disabled = hosting || !connected;
+
+  $("footVersion").textContent = state.version || "ClipBridge";
+
+  const items = state.history || [];
+  $("count").textContent = items.length ? items.length + (items.length === 1 ? " clip" : " clips") : "";
+
+  const sig = items.map((c) => c.when + "|" + c.kind + "|" + c.snippet).join("~");
+  if (sig === lastSig) return;
+  const fresh = known === 0 ? 1 : Math.max(0, items.length - known);
+  lastSig = sig;
+  known = items.length;
+
+  const list = $("list");
+  if (!items.length) {
+    list.innerHTML = '<div class="empty">Nothing yet. Copy text or a screenshot on either device.</div>';
+    return;
+  }
+
+  list.innerHTML = items.map((c, i) => {
+    const t = new Date(c.when).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const cls = "row" + (i < fresh ? " enter" : "");
+    return '<div class="' + cls + '" tabindex="0" data-i="' + i + '" role="button" title="Click to copy">' +
+      '<span class="time">' + t + '</span>' +
+      '<span class="kind ' + esc(c.kind) + '">' + esc(c.kind) + '</span>' +
+      '<span class="preview">' + esc(c.snippet) + '</span>' +
+      '<span class="origin">' + esc(c.origin) + '</span>' +
+      '</div>';
+  }).join("");
+
+  list.querySelectorAll(".row").forEach((row) => {
+    const copy = () => post("/api/copy", { index: Number(row.dataset.i) });
+    row.addEventListener("click", copy);
+    row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); } });
+  });
+}
+
+async function poll() {
+  try {
+    const r = await fetch("/api/state", { cache: "no-store" });
+    render(await r.json());
+  } catch (e) {
+    $("stateWord").textContent = "Offline";
+    $("beacon").className = "beacon";
+    $("stateAddress").textContent = "the window lost its backend";
+  }
+}
+
+poll();
+setInterval(poll, 800);
+</script>
+</body>
+</html>

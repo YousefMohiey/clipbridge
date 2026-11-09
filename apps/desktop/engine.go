@@ -88,6 +88,7 @@ func (e *Engine) SnapshotJSON() []byte {
 		"syncImages": e.SyncImages,
 		"hosting":    e.hosting,
 		"hostAddr":   e.hostAddr,
+		"version":    "ClipBridge " + appVersion,
 		"history":    hist,
 	}
 	e.mu.Unlock()

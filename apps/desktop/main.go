@@ -13,16 +13,17 @@ import (
 	"time"
 )
 
-//go:embed ui.html
+//go:embed app.html
 var uiHTML []byte
 
-const appVersion = "0.6.1"
+const appVersion = "0.7.0"
 
 var (
 	flagServer = flag.String("server", "", "host address, for example http://192.168.1.8:1717")
 	flagUI     = flag.Int("ui", 1770, "local port for the window")
 	flagOpen   = flag.Bool("open", false, "open the window when the app starts")
 	flagHidden = flag.Bool("hidden", false, "start without opening the window")
+	flagTray   = flag.Bool("trayonly", false, "start only the notification icon, used for testing")
 )
 
 func openBrowser(url string) {
@@ -106,10 +107,61 @@ func main() {
 	go e.Loop(stop)
 	go discover(e, stop)
 
-	if startNative(e, &cfg) {
-		return
+	if *flagTray {
+		startTray(e)
+		select {}
 	}
 
+	mux := newMux(e, &cfg)
+	port, err := serveUI(mux, *flagUI)
+	if err != nil {
+		logf("cannot open the window: %v", err)
+		return
+	}
+	if port != *flagUI {
+		logf("port %d was taken, window moved to %d", *flagUI, port)
+	}
+	url := fmt.Sprintf("http://127.0.0.1:%d", port)
+	writeUIPort(port)
+	logf("window on %s", url)
+
+	if *flagOpen && !*flagHidden {
+		openBrowser(url)
+	}
+
+	select {}
+}
+
+// serveUI binds the window to the first free port, so a busy port cannot
+// leave the app running with no window at all.
+func serveUI(mux *http.ServeMux, want int) (int, error) {
+	for p := want; p < want+40; p++ {
+		if restrictedPort(p) {
+			continue
+		}
+		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
+		if err != nil {
+			continue
+		}
+		go http.Serve(ln, mux)
+		return p, nil
+	}
+	return 0, fmt.Errorf("no free port near %d", want)
+}
+
+// restrictedPort lists the ports Chrome and Edge refuse to load, which would
+// show the user ERR_UNSAFE_PORT instead of the app window.
+func restrictedPort(p int) bool {
+	switch p {
+	case 1719, 1720, 1723, 2049, 3659, 4045, 5060, 5061, 6000, 6566, 6697, 10080:
+		return true
+	}
+	return p >= 6665 && p <= 6669
+}
+
+// newMux builds the window's own API. The window talks to the app over
+// loopback, so the same page works in WebView2 and in a browser.
+func newMux(e *Engine, cfg *Config) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -173,7 +225,7 @@ func main() {
 			SetStartOnBoot(body.On)
 			cfg.StartOnBoot = body.On
 		}
-		SaveConfig(cfg)
+		SaveConfig(*cfg)
 		w.WriteHeader(200)
 	})
 	mux.HandleFunc("/api/send", func(w http.ResponseWriter, r *http.Request) {
@@ -213,48 +265,5 @@ func main() {
 		w.WriteHeader(200)
 	})
 
-	port, err := serveUI(mux, *flagUI)
-	if err != nil {
-		logf("cannot open the window: %v", err)
-		return
-	}
-	if port != *flagUI {
-		logf("port %d was taken, window moved to %d", *flagUI, port)
-	}
-	url := fmt.Sprintf("http://127.0.0.1:%d", port)
-	writeUIPort(port)
-	logf("window on %s", url)
-
-	if *flagOpen && !*flagHidden {
-		openBrowser(url)
-	}
-
-	select {}
-}
-
-// serveUI binds the window to the first free port, so a busy port cannot
-// leave the app running with no window at all.
-func serveUI(mux *http.ServeMux, want int) (int, error) {
-	for p := want; p < want+40; p++ {
-		if restrictedPort(p) {
-			continue
-		}
-		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
-		if err != nil {
-			continue
-		}
-		go http.Serve(ln, mux)
-		return p, nil
-	}
-	return 0, fmt.Errorf("no free port near %d", want)
-}
-
-// restrictedPort lists the ports Chrome and Edge refuse to load, which would
-// show the user ERR_UNSAFE_PORT instead of the app window.
-func restrictedPort(p int) bool {
-	switch p {
-	case 1719, 1720, 1723, 2049, 3659, 4045, 5060, 5061, 6000, 6566, 6697, 10080:
-		return true
-	}
-	return p >= 6665 && p <= 6669
+	return mux
 }

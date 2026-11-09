@@ -19,6 +19,10 @@ machine that stays on, and leave the others alone.
 Download `ClipBridge.exe` and run it. SmartScreen will warn because the binary
 is not signed: choose **More info**, then **Run anyway**.
 
+The window draws with the WebView2 runtime. Windows 10 and 11 ship it, so there
+is nothing to install. If your PC is one of the rare ones without it, the app
+says so and links you to Microsoft's one-time installer.
+
 ### Linux
 
 Download `clipbridge_<version>_amd64.deb` and open it with your software
@@ -42,13 +46,15 @@ Turn on **Start with system** on each device so it is there after a reboot.
 
 ## The window
 
-A native window with a tray icon, not a web page. Status, the host address,
-toggles for text, images and pause, the host switch, start with system, and a
-list of recent clips. Closing the window hides it to the tray; the tray menu
-has Open, Send clipboard now and Exit.
+A native window with a tray icon, not a web page. The top line says what this
+device is doing right now and which address it is using; under it are the
+toggles for text, images, hosting and pause; under those, the recent clips,
+newest first. Click any clip to copy it again.
 
-On Linux the window opens in your browser on port 1770 when you launch the app
-from your applications menu. Nothing opens on its own at login.
+The tray menu has Open ClipBridge, Pause or Resume sync, and Quit.
+
+On Linux the same page opens in your browser on port 1770 when you launch the
+app from your applications menu. Nothing opens on its own at login.
 
 ## Privacy
 
