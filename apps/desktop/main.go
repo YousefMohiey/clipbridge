@@ -16,7 +16,7 @@ import (
 //go:embed app.html
 var uiHTML []byte
 
-const appVersion = "0.9.0"
+const appVersion = "0.10.0"
 
 var (
 	flagServer = flag.String("server", "", "host address, for example http://192.168.1.8:1717")
@@ -81,6 +81,15 @@ func main() {
 	flag.Parse()
 
 	if !acquireInstance() {
+		// Already running: bring the existing window forward instead of
+		// doing nothing, which is what a second click on the icon expects.
+		if port := readUIPort(); port > 0 {
+			url := fmt.Sprintf("http://127.0.0.1:%d", port)
+			if !openAppWindow(url) {
+				openBrowser(url)
+			}
+			return
+		}
 		messageBox("ClipBridge", "ClipBridge is already running. Look for its icon in the notification area.")
 		return
 	}

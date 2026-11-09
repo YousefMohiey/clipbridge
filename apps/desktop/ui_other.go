@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows && !linux
 
 package main
 
@@ -9,3 +9,6 @@ func startNative(e *Engine, cfg *Config, url string) bool { return false }
 func messageBox(title, text string) {}
 
 func startTray(e *Engine) {}
+
+// openAppWindow has no app mode on this platform.
+func openAppWindow(url string) bool { return false }
