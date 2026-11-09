@@ -31,6 +31,7 @@ var (
 	procGlobalUnlock = kernel32.NewProc("GlobalUnlock")
 	procGlobalSize   = kernel32.NewProc("GlobalSize")
 	procGlobalFree   = kernel32.NewProc("GlobalFree")
+	procMessageBox   = user32.NewProc("MessageBoxW")
 )
 
 const (
@@ -229,4 +230,12 @@ func encodeDIB(img image.Image) []byte {
 		}
 	}
 	return append(header, pixels...)
+}
+
+// messageBox shows a native dialog. Used when the window cannot start, so the
+// reason is visible instead of silent.
+func messageBox(title, text string) {
+	t, _ := syscall.UTF16PtrFromString(title)
+	m, _ := syscall.UTF16PtrFromString(text)
+	procMessageBox.Call(0, uintptr(unsafe.Pointer(m)), uintptr(unsafe.Pointer(t)), 0x10)
 }

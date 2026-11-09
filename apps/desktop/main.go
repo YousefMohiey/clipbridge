@@ -16,6 +16,8 @@ import (
 //go:embed ui.html
 var uiHTML []byte
 
+const appVersion = "0.6.0"
+
 var (
 	flagServer = flag.String("server", "", "host address, for example http://192.168.1.8:1717")
 	flagUI     = flag.Int("ui", 1770, "local port for the window")
@@ -78,11 +80,10 @@ func main() {
 	flag.Parse()
 
 	if !acquireInstance() {
-		if p := readUIPort(); p > 0 {
-			openBrowser(fmt.Sprintf("http://127.0.0.1:%d", p))
-		}
+		messageBox("ClipBridge", "ClipBridge is already running. Look for its icon in the notification area.")
 		return
 	}
+	logf("ClipBridge %s starting", appVersion)
 
 	e := NewEngine(*flagServer)
 	cfg := LoadConfig()

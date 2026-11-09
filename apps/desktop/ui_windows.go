@@ -42,6 +42,7 @@ func startNative(e *Engine, cfg *Config) (ok bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			logf("window failed: %v\n%s", r, debug.Stack())
+			messageBox("ClipBridge", fmt.Sprintf("The window crashed: %v\n\nSync keeps running. Details are in %s\\app.log", r, configDir()))
 			ok = false
 		}
 	}()
@@ -49,6 +50,8 @@ func startNative(e *Engine, cfg *Config) (ok bool) {
 	ui := &nativeUI{e: e, cfg: cfg}
 	if err := ui.create(); err != nil {
 		logf("cannot open the window: %v", err)
+		messageBox("ClipBridge", "The window could not start:\n\n"+err.Error()+
+			"\n\nSync keeps running. Details are in "+configDir()+"\\app.log")
 		return false
 	}
 	logf("window ready")
@@ -70,7 +73,7 @@ func (u *nativeUI) create() error {
 
 	err := (MainWindow{
 		AssignTo: &u.mw,
-		Title:    "ClipBridge",
+		Title:    "ClipBridge " + appVersion,
 		Size:     Size{Width: 660, Height: 720},
 		MinSize:  Size{Width: 560, Height: 600},
 		Layout:   VBox{},
