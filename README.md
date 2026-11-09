@@ -46,9 +46,13 @@ Turn on **Start with system** on each device so it is there after a reboot.
 
 ## The window
 
-A native window with a tray icon, not a web page. Devices on the left, the
-selected one on the right: what it is doing, the sync switches, the host
-address, and the recent clips, newest first. Click any clip to copy it again.
+A native window with a tray icon, not a web page. Your other devices appear on
+the left as soon as their app is open on the same network. Press **Connect**
+next to one and it says **connected**; from then on clips travel both ways with
+every device you linked. Disconnect is the same button.
+
+There is no host and no guest. Every device serves and every device can connect
+to the others, so two laptops and a phone can all be linked at once.
 
 The tray menu has Open ClipBridge, Pause or Resume sync, and Quit.
 

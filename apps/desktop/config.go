@@ -11,23 +11,36 @@ import (
 )
 
 type Config struct {
-	Server      string `json:"server"`
-	Host        bool   `json:"host"`
-	SyncText    bool   `json:"syncText"`
-	SyncImages  bool   `json:"syncImages"`
-	StartOnBoot bool   `json:"startOnBoot"`
+	Peers       []string `json:"peers"`
+	SyncText    bool     `json:"syncText"`
+	SyncImages  bool     `json:"syncImages"`
+	StartOnBoot bool     `json:"startOnBoot"`
 }
 
+// profileSuffix lets a second copy run beside the first, used for testing.
+var profileSuffix string
+
 func configDir() string {
+	name := "clipbridge"
+	if profileSuffix != "" {
+		name += "-" + profileSuffix
+	}
 	if runtime.GOOS == "windows" {
 		if dir := os.Getenv("LOCALAPPDATA"); dir != "" {
-			return filepath.Join(dir, "ClipBridge")
+			return filepath.Join(dir, "ClipBridge"+suffixDash())
 		}
 	}
 	if dir, err := os.UserConfigDir(); err == nil {
-		return filepath.Join(dir, "clipbridge")
+		return filepath.Join(dir, name)
 	}
 	return "."
+}
+
+func suffixDash() string {
+	if profileSuffix == "" {
+		return ""
+	}
+	return "-" + profileSuffix
 }
 
 func configPath() string { return filepath.Join(configDir(), "config.json") }

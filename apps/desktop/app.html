@@ -67,23 +67,36 @@
   .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   .rail-body { flex: 1; overflow-y: auto; padding: 8px 8px 8px; min-height: 0; }
-  .section { color: var(--muted); font-size: 11px; padding: 6px 6px; }
+  .section { color: var(--muted); font-size: 11px; padding: 8px 6px 5px; }
+
   .dev {
     display: flex; align-items: center; gap: 10px;
     padding: 7px 8px; border-radius: 4px;
     border: 1px solid transparent;
-    cursor: pointer;
   }
   .dev:hover { background: #24282d; }
-  .dev.selected { background: #1a212b; border-color: #2f4a5e; }
+  .dev.on { background: #1a212b; border-color: #2f4a5e; }
   .dev .glyph { color: var(--ink-2); flex: none; display: grid; place-items: center; }
-  .dev .meta { min-width: 0; display: flex; flex-direction: column; }
+  .dev.on .glyph { color: var(--accent); }
+  .dev .meta { min-width: 0; flex: 1; display: flex; flex-direction: column; }
   .dev .name { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dev .status { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dev.selected .glyph { color: var(--accent); }
+
+  .act {
+    flex: none;
+    font: inherit; font-size: 11px; color: var(--ink);
+    background: var(--raised); border: 1px solid #3a4048; border-radius: 4px;
+    padding: 3px 9px; cursor: pointer;
+  }
+  .act:hover { background: #333a42; border-color: #49515a; }
+  .act.primary { background: var(--accent); border-color: var(--accent); color: #06222f; }
+  .act.primary:hover { background: #4fbdf3; }
+  .act:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .rail-empty { color: var(--muted); font-size: 11.5px; padding: 6px 8px 10px; line-height: 1.45; }
 
   .rail-foot {
-    flex: none; height: 34px;
+    flex: none; min-height: 34px;
     display: flex; align-items: center; gap: 8px;
     padding: 0 14px; border-top: 1px solid var(--line);
     color: var(--muted); font-size: 11px;
@@ -202,15 +215,15 @@
   <aside class="rail">
     <div class="rail-head">
       <span>Devices</span>
-      <button class="icon-btn" id="refreshBtn" title="Check again">
+      <button class="icon-btn" id="refreshBtn" title="Look again">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
           <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2.5v3h-3"/>
         </svg>
       </button>
     </div>
     <div class="rail-body">
-      <div class="section">This network</div>
-      <div class="dev selected" id="devSelf">
+      <div class="section">This device</div>
+      <div class="dev" id="devSelf">
         <span class="glyph">
           <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
             <rect x="2" y="3" width="12" height="7.5" rx="1"/><path d="M5.5 13h5"/>
@@ -218,30 +231,21 @@
         </span>
         <span class="meta">
           <span class="name" id="selfName">This device</span>
-          <span class="status" id="selfStatus">idle</span>
+          <span class="status" id="selfStatus">starting</span>
         </span>
       </div>
-      <div class="dev" id="devHost">
-        <span class="glyph">
-          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
-            <circle cx="8" cy="8" r="2"/><circle cx="3" cy="3" r="1.5"/><circle cx="13" cy="3" r="1.5"/>
-            <circle cx="3" cy="13" r="1.5"/><circle cx="13" cy="13" r="1.5"/>
-            <path d="M4.3 4.3 6.6 6.6M11.7 4.3 9.4 6.6M4.3 11.7 6.6 9.4M11.7 11.7 9.4 9.4"/>
-          </svg>
-        </span>
-        <span class="meta">
-          <span class="name" id="hostName">No host</span>
-          <span class="status" id="hostStatus">not connected</span>
-        </span>
-      </div>
+
+      <div class="section">Nearby</div>
+      <div id="peerList"></div>
+      <div class="rail-empty" id="peerEmpty">No other device yet. Open ClipBridge on your other device, on the same network.</div>
     </div>
     <div class="rail-foot"><span class="dot" id="footDot"></span><span id="footText">starting</span></div>
   </aside>
 
   <section class="content">
     <header class="pane-head">
-      <div class="pane-title" id="paneTitle">Not connected</div>
-      <div class="pane-sub" id="paneSub">looking for a host on this network</div>
+      <div class="pane-title" id="paneTitle">No devices connected</div>
+      <div class="pane-sub" id="paneSub">connect a device on the left and clips travel both ways</div>
     </header>
 
     <div class="group">
@@ -259,20 +263,19 @@
     <div class="group">
       <div class="group-label">This device</div>
       <div class="rows">
-        <label class="row switch"><span class="label">Host for the network</span>
-          <input type="checkbox" id="swHost"><span class="track"></span></label>
-        <label class="row switch"><span class="label">Start with Windows</span>
+        <div class="row"><span class="label">Serving on</span><code id="selfAddr" style="font: 12px/1.4 'Noto Sans Mono', Consolas, monospace; color: var(--ink-2)">…</code></div>
+        <label class="row switch"><span class="label" id="bootLabel">Start with Windows</span>
           <input type="checkbox" id="swBoot"><span class="track"></span></label>
       </div>
     </div>
 
-    <div class="group" id="hostGroup">
-      <div class="group-label">Host address</div>
+    <div class="group">
+      <div class="group-label">Connect by address</div>
       <div class="rows">
         <div class="row plain">
           <div class="addr" id="addrRow">
-            <input type="text" id="hostField" spellcheck="false" placeholder="no host found on this network">
-            <button class="mini" id="applyBtn">Apply</button>
+            <input type="text" id="hostField" spellcheck="false" placeholder="address, for example 192.168.1.20:1717">
+            <button class="mini" id="applyBtn">Connect</button>
           </div>
         </div>
       </div>
@@ -286,20 +289,20 @@
     </div>
 
     <div class="pane-actions">
-      <button class="primary" id="sendBtn" title="Push what is copied here to the other device">Send now</button>
+      <button class="primary" id="sendBtn" title="Push what is copied here to the connected devices">Send now</button>
     </div>
   </section>
 
   <footer class="statusbar">
     <span id="footLeft">ClipBridge</span>
-    <span><b id="footRight">0.8.0</b></span>
+    <span><b id="footRight">same network only</b></span>
   </footer>
 </div>
 
 <script>
 const $ = (id) => document.getElementById(id);
 let lastSig = "";
-let known = 0;
+let peerSig = "";
 
 function post(path, body) {
   return fetch(path, {
@@ -313,68 +316,89 @@ $("swText").onchange = (e) => post("/api/toggle", { name: "text", on: e.target.c
 $("swImages").onchange = (e) => post("/api/toggle", { name: "images", on: e.target.checked });
 $("swPause").onchange = (e) => post("/api/toggle", { name: "pause", on: e.target.checked });
 $("swBoot").onchange = (e) => post("/api/toggle", { name: "boot", on: e.target.checked });
-$("swHost").onchange = (e) => post("/api/toggle", { name: "host", on: e.target.checked }).then(() => setTimeout(poll, 300));
 $("sendBtn").onclick = () => post("/api/send");
 $("refreshBtn").onclick = () => poll();
-$("devHost").onclick = () => $("hostField").focus();
-$("devSelf").onclick = () => $("devHost").classList.remove("selected");
 
 $("applyBtn").onclick = () => {
   const v = $("hostField").value.trim();
   if (!v) return;
-  $("addrRow").classList.remove("dirty");
-  post("/api/server", { server: v }).then(() => setTimeout(poll, 300));
+  post("/api/connect", { addr: v }).then(() => {
+    $("hostField").value = "";
+    $("addrRow").classList.remove("dirty");
+    setTimeout(poll, 250);
+  });
 };
 $("hostField").addEventListener("keydown", (e) => { if (e.key === "Enter") $("applyBtn").click(); });
 $("hostField").addEventListener("input", () => {
-  const shown = $("hostField").value.trim().replace(/^https?:\/\//, "");
-  const current = String(window.__server || "").replace(/^https?:\/\//, "");
-  $("addrRow").classList.toggle("dirty", shown !== current && shown !== "");
+  $("addrRow").classList.toggle("dirty", $("hostField").value.trim() !== "");
 });
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+const laptopIcon = '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="12" height="7.5" rx="1"/><path d="M5.5 13h5"/></svg>';
+const netIcon = '<svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2"/><circle cx="3" cy="3" r="1.5"/><circle cx="13" cy="3" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="13" cy="13" r="1.5"/><path d="M4.3 4.3 6.6 6.6M11.7 4.3 9.4 6.6M4.3 11.7 6.6 9.4M11.7 11.7 9.4 9.4"/></svg>';
+
+function renderPeers(state) {
+  const peers = state.peers || [];
+  const sig = peers.map((p) => p.addr + p.connected + p.reachable + p.name).join("|");
+  $("peerEmpty").style.display = peers.length ? "none" : "block";
+  if (sig === peerSig) return;
+  peerSig = sig;
+
+  const list = $("peerList");
+  list.innerHTML = peers.map((p) => {
+    const on = !!p.connected;
+    return '<div class="dev' + (on ? " on" : "") + '" data-addr="' + esc(p.addr) + '">' +
+      '<span class="glyph">' + (on ? laptopIcon : netIcon) + '</span>' +
+      '<span class="meta">' +
+      '<span class="name">' + esc(p.name || p.addr) + '</span>' +
+      '<span class="status">' + (on ? (p.reachable ? "connected" : "not reachable right now") : (p.name && p.name !== p.addr ? esc(p.addr) : "on this network")) + '</span>' +
+      '</span>' +
+      '<button class="act' + (on ? "" : " primary") + '" data-act="' + (on ? "disconnect" : "connect") + '" data-addr="' + esc(p.addr) + '">' +
+      (on ? "Disconnect" : "Connect") + '</button>' +
+      '</div>';
+  }).join("");
+
+  list.querySelectorAll("button[data-act]").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const addr = btn.dataset.addr;
+      const path = btn.dataset.act === "connect" ? "/api/connect" : "/api/disconnect";
+      post(path, { addr }).then(() => setTimeout(poll, 250));
+    });
+  });
+}
+
 function render(state) {
-  const hosting = !!state.hosting;
-  const connected = !!state.connected;
-  const live = hosting || connected;
+  const connectedCount = state.connected || 0;
+  const peers = state.peers || [];
 
-  $("paneTitle").textContent = hosting ? "Hosting" : connected ? "Connected" : "Not connected";
+  $("paneTitle").textContent = connectedCount === 0
+    ? "No devices connected"
+    : "Connected to " + connectedCount + (connectedCount === 1 ? " device" : " devices");
+  $("paneSub").textContent = connectedCount === 0
+    ? (peers.length ? "press Connect next to a device on the left" : "waiting for another device on this network")
+    : "clips travel both ways with every device you link";
 
-  const addr = String(hosting ? state.hostAddr : state.server || "").replace(/^https?:\/\//, "");
-  $("paneSub").innerHTML = hosting
-    ? "serving this clipboard on <code>" + esc(addr || "port 1717") + "</code>"
-    : connected
-      ? "syncing with <code>" + esc(addr) + "</code>"
-      : "no host found on this network";
-
-  window.__server = addr;
-  $("hostGroup").style.display = hosting ? "none" : "flex";
-  if (!hosting && document.activeElement !== $("hostField")) {
-    if ($("hostField").value !== addr) $("hostField").value = addr;
-    $("addrRow").classList.remove("dirty");
-  }
+  $("selfName").textContent = state.device || "This device";
+  $("selfStatus").textContent = state.selfAddr ? "serving on " + state.selfAddr : "not reachable";
+  $("selfAddr").textContent = state.selfAddr || "not reachable";
 
   $("swText").checked = !!state.syncText;
   $("swImages").checked = !!state.syncImages;
   $("swPause").checked = !!state.paused;
-  $("swHost").checked = hosting;
-  $("sendBtn").disabled = hosting || !connected;
+  $("sendBtn").disabled = connectedCount === 0;
+  $("bootLabel").textContent = state.platform === "windows" ? "Start with Windows" : "Start at login";
 
-  $("selfName").textContent = state.device || "This device";
-  $("selfStatus").textContent = hosting ? "hosting on " + (addr || "1717") : connected ? "guest, syncing" : "idle";
-  $("hostName").textContent = hosting ? "Guests" : addr || "No host";
-  $("hostStatus").textContent = hosting ? "any device on this network" : connected ? "connected" : "not connected";
-
-  $("devHost").classList.toggle("selected", hosting);
-  $("devSelf").classList.toggle("selected", !hosting);
-
-  $("footDot").className = "dot" + (live ? " on" : "");
-  $("footText").textContent = hosting ? "serving the clipboard" : connected ? "syncing" : "waiting for a host";
+  $("footDot").className = "dot" + (connectedCount ? " on" : "");
+  $("footText").textContent = connectedCount
+    ? connectedCount === 1 ? "linked with 1 device" : "linked with " + connectedCount + " devices"
+    : "not linked to any device";
   $("footLeft").textContent = state.version || "ClipBridge";
-  $("footRight").textContent = "same network only";
+
+  renderPeers(state);
 
   const items = state.history || [];
   $("recentLabel").textContent = items.length
@@ -384,7 +408,6 @@ function render(state) {
   const sig = items.map((c) => c.when + "|" + c.kind + "|" + c.snippet).join("~");
   if (sig === lastSig) return;
   lastSig = sig;
-  known = items.length;
 
   const list = $("list");
   if (!items.length) {
@@ -414,7 +437,7 @@ async function poll() {
     const r = await fetch("/api/state", { cache: "no-store" });
     render(await r.json());
   } catch (e) {
-    $("paneTitle").textContent = "Not connected";
+    $("paneTitle").textContent = "Not reachable";
     $("paneSub").textContent = "the window lost its backend";
   }
 }
