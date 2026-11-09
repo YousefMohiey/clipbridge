@@ -16,7 +16,7 @@ import (
 //go:embed app.html
 var uiHTML []byte
 
-const appVersion = "0.7.0"
+const appVersion = "0.8.0"
 
 var (
 	flagServer = flag.String("server", "", "host address, for example http://192.168.1.8:1717")

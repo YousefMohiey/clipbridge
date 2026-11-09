@@ -34,8 +34,8 @@ func startNative(e *Engine, cfg *Config, url string) (ok bool) {
 		AutoFocus: true,
 		WindowOptions: webview2.WindowOptions{
 			Title:  "ClipBridge " + appVersion,
-			Width:  720,
-			Height: 690,
+			Width:  900,
+			Height: 700,
 			Center: true,
 		},
 	})

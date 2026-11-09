@@ -6,162 +6,191 @@
 <title>ClipBridge</title>
 <style>
   :root {
-    --page: #0b0d10;
-    --panel: #12161b;
-    --raise: #171c23;
-    --line: #232a33;
-    --ink: #e8edf2;
-    --muted: #9aa8b8;
-    --faint: #7c8a9b;
-    --brand: #4c8dff;
-    --live: #34d399;
-    --warn: #f87171;
+    --base: #1a1c1f;
+    --rail: #202326;
+    --deep: #141618;
+    --raised: #292c30;
+    --line: #2b2f34;
+    --line-soft: #24282c;
+    --ink: #eff0f1;
+    --ink-2: #c3c9cf;
+    --muted: #8b949c;
+    --accent: #3daee9;
+    --good: #27ae60;
+    --bad: #da4453;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
   body {
     margin: 0;
-    background: var(--page);
+    background: var(--base);
     color: var(--ink);
-    font: 14px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    font: 12.5px/1.5 "Noto Sans", "Segoe UI", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     user-select: none;
     cursor: default;
     overflow: hidden;
   }
-  ::selection { background: rgba(76, 141, 255, .35); color: var(--ink); }
-  ::-webkit-scrollbar { width: 10px; }
-  ::-webkit-scrollbar-thumb { background: #2a333e; border-radius: 6px; border: 3px solid var(--page); }
-  ::-webkit-scrollbar-thumb:hover { background: #384454; }
+  ::selection { background: rgba(61, 174, 233, .35); }
+  ::-webkit-scrollbar { width: 11px; }
+  ::-webkit-scrollbar-thumb { background: #33383e; border: 3px solid var(--base); border-radius: 7px; }
+  ::-webkit-scrollbar-thumb:hover { background: #444b52; }
   ::-webkit-scrollbar-track { background: transparent; }
 
-  main {
+  .app {
     height: 100%;
     display: grid;
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
-    padding: 26px 26px 16px;
+    grid-template-columns: 258px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 26px;
   }
 
-  /* the one hero: what this device is doing right now */
-  .state { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 22px; }
-  .beacon {
-    width: 10px; height: 10px; border-radius: 50%;
-    margin-top: 12px; flex: none;
-    background: var(--warn);
-    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
-    transition: background .28s ease;
+  .rail {
+    background: var(--rail);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    min-height: 0;
   }
-  .beacon.live { background: var(--live); }
-  .beacon.pulse { animation: pulse 1.1s ease-out 1; }
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, .45); }
-    100% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
-  }
-  .state-body { min-width: 0; flex: 1; }
-  .state-word { font-size: 27px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; }
-  .state-address {
-    margin-top: 6px;
-    font: 13px/1.4 ui-monospace, "Cascadia Mono", "Consolas", monospace;
-    color: var(--muted);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .state-action { align-self: center; }
-
-  button {
-    font: inherit; color: var(--ink); cursor: pointer;
-    background: var(--raise); border: 1px solid var(--line);
-    border-radius: 9px; padding: 8px 13px;
-    transition: background .16s ease, border-color .16s ease, transform .16s ease;
-  }
-  button:hover { background: #1d242c; border-color: #303a46; }
-  button:active { transform: translateY(1px); }
-  button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-  button.primary { background: var(--brand); border-color: var(--brand); color: #08111f; font-weight: 600; }
-  button.primary:hover { background: #62a0ff; border-color: #62a0ff; }
-  button:hover { background: #202832; }
-  button:disabled { color: var(--faint); background: var(--panel); border-color: var(--line); cursor: not-allowed; }
-
-  .controls {
-    display: flex; align-items: center; gap: 16px;
-    padding: 14px 0;
-    border-top: 1px solid var(--line);
+  .rail-head {
+    height: 42px; flex: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10px 0 14px;
     border-bottom: 1px solid var(--line);
-    flex-wrap: wrap;
+    font-size: 12.5px; color: var(--ink);
   }
-  .switch { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); cursor: pointer; font-size: 13.5px; }
-  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .icon-btn {
+    width: 24px; height: 24px; padding: 0;
+    display: grid; place-items: center;
+    background: transparent; border: 0; border-radius: 4px;
+    color: var(--muted); cursor: pointer;
+  }
+  .icon-btn:hover { background: #2a2f35; color: var(--ink); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .rail-body { flex: 1; overflow-y: auto; padding: 8px 8px 8px; min-height: 0; }
+  .section { color: var(--muted); font-size: 11px; padding: 6px 6px; }
+  .dev {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .dev:hover { background: #24282d; }
+  .dev.selected { background: #1a212b; border-color: #2f4a5e; }
+  .dev .glyph { color: var(--ink-2); flex: none; display: grid; place-items: center; }
+  .dev .meta { min-width: 0; display: flex; flex-direction: column; }
+  .dev .name { font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dev .status { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dev.selected .glyph { color: var(--accent); }
+
+  .rail-foot {
+    flex: none; height: 34px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 14px; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 11px;
+  }
+  .rail-foot .dot { width: 7px; height: 7px; border-radius: 50%; background: #5a636b; flex: none; }
+  .rail-foot .dot.on { background: var(--good); }
+
+  .content { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 16px 18px 0; }
+  .pane-head { flex: none; }
+  .pane-title { font-size: 15px; color: var(--ink); }
+  .pane-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .pane-sub code { font-family: "Noto Sans Mono", Consolas, ui-monospace, monospace; font-size: 11.5px; color: var(--ink-2); }
+
+  .group { flex: none; margin-top: 14px; display: flex; flex-direction: column; min-height: 0; }
+  .group.grow { flex: 1 1 auto; }
+  .group-label { color: var(--muted); font-size: 11px; padding: 0 2px 6px; }
+
+  .rows {
+    background: var(--deep);
+    border: 1px solid var(--line-soft);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .rows.grow { overflow-y: auto; }
+
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-height: 33px; padding: 0 11px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .rows > .row:last-child { border-bottom: 0; }
+  .row .label { font-size: 12.5px; color: var(--ink-2); }
+
+  .switch { cursor: pointer; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
   .track {
-    width: 34px; height: 19px; border-radius: 10px; background: #222a34;
-    border: 1px solid var(--line); position: relative; transition: background .18s ease, border-color .18s ease;
+    width: 30px; height: 16px; border-radius: 8px;
+    background: #2b3036; border: 1px solid #383f46;
+    position: relative; display: block;
+    transition: background .15s ease, border-color .15s ease;
   }
   .track::after {
-    content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px;
-    border-radius: 50%; background: #6b7889; transition: transform .18s cubic-bezier(.2,.8,.2,1), background .18s ease;
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #8b949c;
+    transition: transform .16s cubic-bezier(.2,.8,.2,1), background .15s ease;
   }
-  .switch input:checked + .track { background: #1d3350; border-color: #33507f; }
-  .switch input:checked + .track::after { transform: translateX(15px); background: var(--brand); }
-  .switch input:focus-visible + .track { outline: 2px solid var(--brand); outline-offset: 2px; }
-  .switch.paused input:checked + .track { background: #3a2a2a; border-color: #5c3a3a; }
-  .switch.paused input:checked + .track::after { background: var(--warn); }
-  .switch.small { font-size: 12.5px; color: var(--muted); gap: 8px; }
-  .switch.small .track { width: 30px; height: 17px; }
-  .switch.small .track::after { width: 11px; height: 11px; }
-  .switch.small input:checked + .track::after { transform: translateX(13px); }
+  .switch input:checked + .track { background: rgba(61,174,233,.25); border-color: #2f6e8f; }
+  .switch input:checked + .track::after { transform: translateX(14px); background: var(--accent); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .switch.danger input:checked + .track { background: rgba(218,68,83,.22); border-color: #6d2f36; }
+  .switch.danger input:checked + .track::after { background: var(--bad); }
 
-  .divider { width: 1px; height: 18px; background: var(--line); }
-
-  .addr { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .row.plain { padding: 0; }
+  .addr { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding: 5px 11px; }
   .addr input {
     flex: 1; min-width: 0;
-    font: 13px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
-    color: var(--ink); background: transparent;
-    border: 1px solid transparent; border-radius: 7px;
-    padding: 5px 8px; margin-left: -9px; outline: none;
-    transition: border-color .15s ease, background .15s ease;
+    background: transparent; border: 0; outline: none;
+    color: var(--ink); font: 12px/1.4 "Noto Sans Mono", Consolas, ui-monospace, monospace;
+    padding: 3px 0;
   }
-  .addr input::placeholder { color: var(--faint); }
-  .addr input:hover { border-color: var(--line); }
-  .addr input:focus { border-color: #35507a; background: var(--panel); }
-  button.mini { padding: 5px 10px; font-size: 12.5px; }
-  .addr button.mini { visibility: hidden; }
-  .addr.dirty button.mini { visibility: visible; }
+  .addr input::placeholder { color: var(--muted); }
+  .addr.dirty input { color: var(--accent); }
+  .mini {
+    display: none;
+    font: inherit; font-size: 11.5px; color: var(--ink);
+    background: var(--raised); border: 1px solid #3a4048; border-radius: 4px;
+    padding: 3px 9px; cursor: pointer;
+  }
+  .mini:hover { background: #32383f; }
+  .addr.dirty .mini { display: block; }
 
-  .clips { min-height: 0; display: flex; flex-direction: column; padding-top: 16px; }
-  .clips-head {
-    display: flex; justify-content: space-between; align-items: baseline;
-    color: var(--faint); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
-    padding-bottom: 6px;
+  .clip {
+    display: grid; grid-template-columns: 62px 48px minmax(0, 1fr) auto;
+    align-items: center; gap: 10px;
+    min-height: 34px; padding: 6px 11px;
+    border-bottom: 1px solid var(--line-soft);
+    cursor: pointer;
   }
-  .list { overflow-y: auto; min-height: 0; flex: 1; }
-  .row {
-    display: grid; grid-template-columns: 68px 54px minmax(0, 1fr) auto;
-    align-items: center; gap: 12px;
-    padding: 10px 8px; margin: 0 -8px;
-    border-radius: 8px; cursor: pointer;
-    border-bottom: 1px solid #1a2027;
-    transition: background .14s ease;
-  }
-  .row:last-child { border-bottom: none; }
-  .row:hover { background: rgba(255,255,255,.035); }
-  .row:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
-  .time { font: 12px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .kind { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .kind.image { color: #8fb4ff; }
-  .preview { min-width: 0; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .origin { font-size: 11.5px; color: var(--faint); white-space: nowrap; }
-  .empty { color: var(--muted); font-size: 13.5px; padding: 12px 2px; }
-  .row.enter { animation: enter .34s cubic-bezier(.2,.8,.2,1); }
-  @keyframes enter {
-    from { opacity: 0; transform: translateY(-6px); filter: blur(2px); }
-    to { opacity: 1; transform: none; filter: none; }
-  }
+  .rows > .clip:last-child { border-bottom: 0; }
+  .clip:hover { background: #191c1f; }
+  .clip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .clip .time { font: 11px/1 "Noto Sans Mono", Consolas, ui-monospace, monospace; color: var(--muted); }
+  .clip .kind { font-size: 10.5px; color: var(--muted); }
+  .clip .kind.image { color: var(--accent); }
+  .clip .text { font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clip .origin { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .empty { padding: 22px 12px; text-align: center; color: var(--muted); font-size: 11.5px; }
 
-  footer {
-    display: flex; justify-content: space-between; align-items: center;
-    border-top: 1px solid var(--line); padding-top: 11px; margin-top: 10px;
-    color: var(--faint); font-size: 11.5px;
+  .pane-actions { flex: none; display: flex; justify-content: flex-end; padding: 10px 0 12px; }
+  .primary {
+    font: inherit; font-size: 12px; color: #06222f;
+    background: var(--accent); border: 1px solid var(--accent);
+    border-radius: 4px; padding: 5px 13px; cursor: pointer;
   }
-  footer b { color: var(--muted); font-weight: 500; }
+  .primary:hover { background: #4fbdf3; }
+  .primary:disabled { background: #2b3036; border-color: #383f46; color: var(--muted); cursor: default; }
+  .primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .statusbar {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 14px;
+    background: var(--rail); border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 11px;
+  }
+  .statusbar b { font-weight: 400; color: var(--ink-2); }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
@@ -169,41 +198,103 @@
 </style>
 </head>
 <body>
-<main>
-  <section class="state">
-    <span class="beacon" id="beacon"></span>
-    <div class="state-body">
-      <div class="state-word" id="stateWord">Starting</div>
-      <div class="addr" id="addrRow">
-        <input type="text" id="hostField" spellcheck="false" placeholder="no host found on this network">
-        <button id="applyBtn" class="mini">Apply</button>
+<div class="app">
+  <aside class="rail">
+    <div class="rail-head">
+      <span>Devices</span>
+      <button class="icon-btn" id="refreshBtn" title="Check again">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"/><path d="M13.5 2.5v3h-3"/>
+        </svg>
+      </button>
+    </div>
+    <div class="rail-body">
+      <div class="section">This network</div>
+      <div class="dev selected" id="devSelf">
+        <span class="glyph">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
+            <rect x="2" y="3" width="12" height="7.5" rx="1"/><path d="M5.5 13h5"/>
+          </svg>
+        </span>
+        <span class="meta">
+          <span class="name" id="selfName">This device</span>
+          <span class="status" id="selfStatus">idle</span>
+        </span>
       </div>
-      <div class="state-address" id="stateAddress">looking for a host on this network</div>
+      <div class="dev" id="devHost">
+        <span class="glyph">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3">
+            <circle cx="8" cy="8" r="2"/><circle cx="3" cy="3" r="1.5"/><circle cx="13" cy="3" r="1.5"/>
+            <circle cx="3" cy="13" r="1.5"/><circle cx="13" cy="13" r="1.5"/>
+            <path d="M4.3 4.3 6.6 6.6M11.7 4.3 9.4 6.6M4.3 11.7 6.6 9.4M11.7 11.7 9.4 9.4"/>
+          </svg>
+        </span>
+        <span class="meta">
+          <span class="name" id="hostName">No host</span>
+          <span class="status" id="hostStatus">not connected</span>
+        </span>
+      </div>
     </div>
-    <button class="primary state-action" id="sendBtn" title="Push what is copied here to the other device">Send now</button>
-  </section>
+    <div class="rail-foot"><span class="dot" id="footDot"></span><span id="footText">starting</span></div>
+  </aside>
 
-  <section class="controls">
-    <label class="switch"><input type="checkbox" id="swText" checked><span class="track"></span>Text</label>
-    <label class="switch"><input type="checkbox" id="swImages" checked><span class="track"></span>Images</label>
-    <span class="divider"></span>
-    <label class="switch"><input type="checkbox" id="swHost"><span class="track"></span>Host here</label>
-    <span class="divider"></span>
-    <label class="switch paused"><input type="checkbox" id="swPause"><span class="track"></span>Pause</label>
-  </section>
+  <section class="content">
+    <header class="pane-head">
+      <div class="pane-title" id="paneTitle">Not connected</div>
+      <div class="pane-sub" id="paneSub">looking for a host on this network</div>
+    </header>
 
-  <section class="clips">
-    <div class="clips-head"><span>Recent</span><span id="count"></span></div>
-    <div class="list" id="list" tabindex="0">
-      <div class="empty" id="empty">Nothing yet. Copy text or a screenshot on either device.</div>
+    <div class="group">
+      <div class="group-label">Sync</div>
+      <div class="rows">
+        <label class="row switch"><span class="label">Text</span>
+          <input type="checkbox" id="swText" checked><span class="track"></span></label>
+        <label class="row switch"><span class="label">Images</span>
+          <input type="checkbox" id="swImages" checked><span class="track"></span></label>
+        <label class="row switch danger"><span class="label">Pause</span>
+          <input type="checkbox" id="swPause"><span class="track"></span></label>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-label">This device</div>
+      <div class="rows">
+        <label class="row switch"><span class="label">Host for the network</span>
+          <input type="checkbox" id="swHost"><span class="track"></span></label>
+        <label class="row switch"><span class="label">Start with Windows</span>
+          <input type="checkbox" id="swBoot"><span class="track"></span></label>
+      </div>
+    </div>
+
+    <div class="group" id="hostGroup">
+      <div class="group-label">Host address</div>
+      <div class="rows">
+        <div class="row plain">
+          <div class="addr" id="addrRow">
+            <input type="text" id="hostField" spellcheck="false" placeholder="no host found on this network">
+            <button class="mini" id="applyBtn">Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group grow">
+      <div class="group-label" id="recentLabel">Recent</div>
+      <div class="rows grow" id="list">
+        <div class="empty">Nothing yet. Copy text or a screenshot on either device.</div>
+      </div>
+    </div>
+
+    <div class="pane-actions">
+      <button class="primary" id="sendBtn" title="Push what is copied here to the other device">Send now</button>
     </div>
   </section>
 
-  <footer>
-    <label class="switch small"><input type="checkbox" id="swBoot"><span class="track"></span>Start with Windows</label>
-    <span id="footVersion">ClipBridge</span>
+  <footer class="statusbar">
+    <span id="footLeft">ClipBridge</span>
+    <span><b id="footRight">0.8.0</b></span>
   </footer>
-</main>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -221,20 +312,24 @@ function post(path, body) {
 $("swText").onchange = (e) => post("/api/toggle", { name: "text", on: e.target.checked });
 $("swImages").onchange = (e) => post("/api/toggle", { name: "images", on: e.target.checked });
 $("swPause").onchange = (e) => post("/api/toggle", { name: "pause", on: e.target.checked });
-$("swHost").onchange = (e) => post("/api/toggle", { name: "host", on: e.target.checked }).then(() => setTimeout(poll, 300));
 $("swBoot").onchange = (e) => post("/api/toggle", { name: "boot", on: e.target.checked });
+$("swHost").onchange = (e) => post("/api/toggle", { name: "host", on: e.target.checked }).then(() => setTimeout(poll, 300));
 $("sendBtn").onclick = () => post("/api/send");
+$("refreshBtn").onclick = () => poll();
+$("devHost").onclick = () => $("hostField").focus();
+$("devSelf").onclick = () => $("devHost").classList.remove("selected");
+
 $("applyBtn").onclick = () => {
   const v = $("hostField").value.trim();
   if (!v) return;
   $("addrRow").classList.remove("dirty");
   post("/api/server", { server: v }).then(() => setTimeout(poll, 300));
 };
-$("hostField").addEventListener("keydown", (e) => { if (e.key === "Enter") { $("applyBtn").click(); $("addrRow").classList.remove("dirty"); } });
+$("hostField").addEventListener("keydown", (e) => { if (e.key === "Enter") $("applyBtn").click(); });
 $("hostField").addEventListener("input", () => {
   const shown = $("hostField").value.trim().replace(/^https?:\/\//, "");
-  const current = (window.__server || "").replace(/^https?:\/\//, "");
-  $("addrRow").classList.toggle("dirty", shown !== current);
+  const current = String(window.__server || "").replace(/^https?:\/\//, "");
+  $("addrRow").classList.toggle("dirty", shown !== current && shown !== "");
 });
 
 function esc(s) {
@@ -244,29 +339,22 @@ function esc(s) {
 function render(state) {
   const hosting = !!state.hosting;
   const connected = !!state.connected;
-  const beacon = $("beacon");
-  const word = hosting ? "Hosting" : connected ? "Connected" : "Offline";
+  const live = hosting || connected;
 
-  if ($("stateWord").textContent !== word) {
-    $("stateWord").textContent = word;
-    beacon.className = "beacon" + (hosting || connected ? " live" : "");
-    if (hosting || connected) {
-      beacon.classList.add("pulse");
-      setTimeout(() => beacon.classList.remove("pulse"), 1200);
-    }
-  } else {
-    beacon.className = "beacon" + (hosting || connected ? " live" : "");
-  }
+  $("paneTitle").textContent = hosting ? "Hosting" : connected ? "Connected" : "Not connected";
 
-  const address = hosting ? state.hostAddr : state.server;
-  $("addrRow").style.display = hosting ? "none" : "flex";
-  $("stateAddress").style.display = hosting ? "block" : "none";
-  window.__server = address || "";
-  if (hosting) {
-    $("stateAddress").textContent = "serving this clipboard on " + (address || "port 1717");
-  } else if (document.activeElement !== $("hostField")) {
-    const s = String(state.server || "").replace(/^https?:\/\//, "");
-    if ($("hostField").value !== s) $("hostField").value = s;
+  const addr = String(hosting ? state.hostAddr : state.server || "").replace(/^https?:\/\//, "");
+  $("paneSub").innerHTML = hosting
+    ? "serving this clipboard on <code>" + esc(addr || "port 1717") + "</code>"
+    : connected
+      ? "syncing with <code>" + esc(addr) + "</code>"
+      : "no host found on this network";
+
+  window.__server = addr;
+  $("hostGroup").style.display = hosting ? "none" : "flex";
+  if (!hosting && document.activeElement !== $("hostField")) {
+    if ($("hostField").value !== addr) $("hostField").value = addr;
+    $("addrRow").classList.remove("dirty");
   }
 
   $("swText").checked = !!state.syncText;
@@ -275,14 +363,26 @@ function render(state) {
   $("swHost").checked = hosting;
   $("sendBtn").disabled = hosting || !connected;
 
-  $("footVersion").textContent = state.version || "ClipBridge";
+  $("selfName").textContent = state.device || "This device";
+  $("selfStatus").textContent = hosting ? "hosting on " + (addr || "1717") : connected ? "guest, syncing" : "idle";
+  $("hostName").textContent = hosting ? "Guests" : addr || "No host";
+  $("hostStatus").textContent = hosting ? "any device on this network" : connected ? "connected" : "not connected";
+
+  $("devHost").classList.toggle("selected", hosting);
+  $("devSelf").classList.toggle("selected", !hosting);
+
+  $("footDot").className = "dot" + (live ? " on" : "");
+  $("footText").textContent = hosting ? "serving the clipboard" : connected ? "syncing" : "waiting for a host";
+  $("footLeft").textContent = state.version || "ClipBridge";
+  $("footRight").textContent = "same network only";
 
   const items = state.history || [];
-  $("count").textContent = items.length ? items.length + (items.length === 1 ? " clip" : " clips") : "";
+  $("recentLabel").textContent = items.length
+    ? "Recent, " + items.length + (items.length === 1 ? " clip" : " clips")
+    : "Recent";
 
   const sig = items.map((c) => c.when + "|" + c.kind + "|" + c.snippet).join("~");
   if (sig === lastSig) return;
-  const fresh = known === 0 ? 1 : Math.max(0, items.length - known);
   lastSig = sig;
   known = items.length;
 
@@ -294,16 +394,15 @@ function render(state) {
 
   list.innerHTML = items.map((c, i) => {
     const t = new Date(c.when).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-    const cls = "row" + (i < fresh ? " enter" : "");
-    return '<div class="' + cls + '" tabindex="0" data-i="' + i + '" role="button" title="Click to copy">' +
+    return '<div class="clip" tabindex="0" data-i="' + i + '" role="button" title="Click to copy">' +
       '<span class="time">' + t + '</span>' +
       '<span class="kind ' + esc(c.kind) + '">' + esc(c.kind) + '</span>' +
-      '<span class="preview">' + esc(c.snippet) + '</span>' +
+      '<span class="text">' + esc(c.snippet) + '</span>' +
       '<span class="origin">' + esc(c.origin) + '</span>' +
       '</div>';
   }).join("");
 
-  list.querySelectorAll(".row").forEach((row) => {
+  list.querySelectorAll(".clip").forEach((row) => {
     const copy = () => post("/api/copy", { index: Number(row.dataset.i) });
     row.addEventListener("click", copy);
     row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); } });
@@ -315,9 +414,8 @@ async function poll() {
     const r = await fetch("/api/state", { cache: "no-store" });
     render(await r.json());
   } catch (e) {
-    $("stateWord").textContent = "Offline";
-    $("beacon").className = "beacon";
-    $("stateAddress").textContent = "the window lost its backend";
+    $("paneTitle").textContent = "Not connected";
+    $("paneSub").textContent = "the window lost its backend";
   }
 }
 

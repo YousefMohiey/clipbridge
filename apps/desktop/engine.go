@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -89,6 +90,7 @@ func (e *Engine) SnapshotJSON() []byte {
 		"hosting":    e.hosting,
 		"hostAddr":   e.hostAddr,
 		"version":    "ClipBridge " + appVersion,
+		"device":     deviceName(),
 		"history":    hist,
 	}
 	e.mu.Unlock()
@@ -369,4 +371,12 @@ func (e *Engine) SendCurrent() bool {
 	e.mu.Unlock()
 	e.remember(*clip)
 	return true
+}
+
+// deviceName is what the rail calls this computer.
+func deviceName() string {
+	if h, err := os.Hostname(); err == nil && h != "" {
+		return h
+	}
+	return "This device"
 }

@@ -46,10 +46,9 @@ Turn on **Start with system** on each device so it is there after a reboot.
 
 ## The window
 
-A native window with a tray icon, not a web page. The top line says what this
-device is doing right now and which address it is using; under it are the
-toggles for text, images, hosting and pause; under those, the recent clips,
-newest first. Click any clip to copy it again.
+A native window with a tray icon, not a web page. Devices on the left, the
+selected one on the right: what it is doing, the sync switches, the host
+address, and the recent clips, newest first. Click any clip to copy it again.
 
 The tray menu has Open ClipBridge, Pause or Resume sync, and Quit.
 
