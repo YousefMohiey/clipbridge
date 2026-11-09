@@ -4,6 +4,7 @@ package main
 
 import (
 	_ "embed"
+	"runtime/debug"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,7 +41,7 @@ func startNative(e *Engine, cfg *Config) (ok bool) {
 	// A crash inside the window must not take the sync down with it.
 	defer func() {
 		if r := recover(); r != nil {
-			logf("window failed: %v", r)
+			logf("window failed: %v\n%s", r, debug.Stack())
 			ok = false
 		}
 	}()
@@ -52,6 +53,9 @@ func startNative(e *Engine, cfg *Config) (ok bool) {
 	}
 	logf("window ready")
 	ui.loop()
+	ui.mw.Show()
+	ui.mw.Activate()
+	logf("visible=%v bounds=%v handle=%v", ui.mw.Visible(), ui.mw.Bounds(), ui.mw.Handle())
 	ui.mw.Run()
 	return true
 }
@@ -67,8 +71,8 @@ func (u *nativeUI) create() error {
 	err := (MainWindow{
 		AssignTo: &u.mw,
 		Title:    "ClipBridge",
-		Size:     Size{Width: 560, Height: 660},
-		MinSize:  Size{Width: 460, Height: 520},
+		Size:     Size{Width: 660, Height: 720},
+		MinSize:  Size{Width: 560, Height: 600},
 		Layout:   VBox{},
 		Children: []Widget{
 			Composite{
@@ -126,20 +130,14 @@ func (u *nativeUI) create() error {
 						OnCheckedChanged: func() { u.setToggle("pause", u.cbPause.Checked()) }},
 				},
 			},
-			GroupBox{
-				Title:  "This device",
-				Layout: VBox{},
-				Children: []Widget{
-					CheckBox{AssignTo: &u.cbHost, Text: "Host for the network", Checked: u.cfg.Host,
-						OnCheckedChanged: func() { u.setHost(u.cbHost.Checked()) }},
-					CheckBox{AssignTo: &u.cbBoot, Text: "Start with system", Checked: u.cfg.StartOnBoot,
-						OnCheckedChanged: func() {
-							SetStartOnBoot(u.cbBoot.Checked())
-							u.cfg.StartOnBoot = u.cbBoot.Checked()
-							SaveConfig(*u.cfg)
-						}},
-				},
-			},
+			CheckBox{AssignTo: &u.cbHost, Text: "Host here", ToolTipText: "Serve this clipboard to the network", Checked: u.cfg.Host,
+				OnCheckedChanged: func() { u.setHost(u.cbHost.Checked()) }},
+			CheckBox{AssignTo: &u.cbBoot, Text: "Autostart", ToolTipText: "Start ClipBridge when Windows starts", Checked: u.cfg.StartOnBoot,
+				OnCheckedChanged: func() {
+			SetStartOnBoot(u.cbBoot.Checked())
+			u.cfg.StartOnBoot = u.cbBoot.Checked()
+			SaveConfig(*u.cfg)
+				}},
 			Label{Text: "Recent"},
 			TextEdit{AssignTo: &u.log, ReadOnly: true, VScroll: true},
 			PushButton{
@@ -151,6 +149,16 @@ func (u *nativeUI) create() error {
 	if err != nil {
 		return err
 	}
+
+
+	// walk sizes a check box from its text at creation time; setting the text
+	// again after the window exists makes it measure the full label.
+	u.cbHost.SetText("Host here")
+	u.cbBoot.SetText("Autostart")
+	u.cbText.SetText("Text")
+	u.cbImages.SetText("Images")
+	u.cbPause.SetText("Pause")
+	u.mw.SetSizePixels(walk.Size{Width: 660, Height: 720})
 
 	if u.icon != nil {
 		u.mw.SetIcon(u.icon)

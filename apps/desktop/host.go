@@ -147,11 +147,17 @@ func (h *Host) Stop() {
 }
 
 func (h *Host) announce() {
-	conn, err := net.DialUDP("udp4", nil, &net.UDPAddr{IP: net.IPv4bcast, Port: 1719})
+	// Broadcast needs SO_BROADCAST, which Go does not set for us.
+	conn, err := net.ListenPacket("udp4", ":0")
 	if err != nil {
+		logf("announce socket: %v", err)
 		return
 	}
 	defer conn.Close()
+	if udp, ok := conn.(*net.UDPConn); ok {
+		enableBroadcast(udp)
+	}
+	dst := &net.UDPAddr{IP: net.IPv4bcast, Port: 1719}
 	payload, _ := json.Marshal(map[string]any{"app": "clipbridge", "port": 1717})
 	tick := time.NewTicker(2 * time.Second)
 	defer tick.Stop()
@@ -160,7 +166,9 @@ func (h *Host) announce() {
 		case <-h.stop:
 			return
 		case <-tick.C:
-			conn.Write(payload)
+			if _, err := conn.WriteTo(payload, dst); err != nil {
+				logf("announce: %v", err)
+			}
 		}
 	}
 }

@@ -10,3 +10,5 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 	gopkg.in/Knetic/govaluate.v3 v3.0.0 // indirect
 )
+
+replace github.com/lxn/walk => ../../third_party/walk
