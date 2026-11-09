@@ -2,7 +2,7 @@
 Type=Application
 Name=ClipBridge
 Comment=Shared clipboard over your local network
-Exec=clipbridge
+Exec=clipbridge -open
 Icon=clipbridge
 Terminal=false
 Categories=Utility;Network;

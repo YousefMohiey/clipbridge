@@ -18,8 +18,8 @@ var uiHTML []byte
 
 var (
 	flagServer = flag.String("server", "", "host address, for example http://192.168.1.8:1717")
-	flagUI     = flag.Int("ui", 1718, "local port for the window")
-	flagOpen   = flag.Bool("open", true, "open the window in the browser")
+	flagUI     = flag.Int("ui", 1770, "local port for the window")
+	flagOpen   = flag.Bool("open", false, "open the window when the app starts")
 	flagHidden = flag.Bool("hidden", false, "start without opening the window")
 )
 
@@ -104,6 +104,10 @@ func main() {
 	stop := make(chan struct{})
 	go e.Loop(stop)
 	go discover(e, stop)
+
+	if startNative(e, &cfg) {
+		return
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -231,6 +235,9 @@ func main() {
 // leave the app running with no window at all.
 func serveUI(mux *http.ServeMux, want int) (int, error) {
 	for p := want; p < want+40; p++ {
+		if restrictedPort(p) {
+			continue
+		}
 		ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p))
 		if err != nil {
 			continue
@@ -239,4 +246,14 @@ func serveUI(mux *http.ServeMux, want int) (int, error) {
 		return p, nil
 	}
 	return 0, fmt.Errorf("no free port near %d", want)
+}
+
+// restrictedPort lists the ports Chrome and Edge refuse to load, which would
+// show the user ERR_UNSAFE_PORT instead of the app window.
+func restrictedPort(p int) bool {
+	switch p {
+	case 1719, 1720, 1723, 2049, 3659, 4045, 5060, 5061, 6000, 6566, 6697, 10080:
+		return true
+	}
+	return p >= 6665 && p <= 6669
 }

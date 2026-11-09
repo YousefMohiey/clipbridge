@@ -350,3 +350,22 @@ func sizeText(n int) string {
 	}
 	return "image " + itoa(n/1024) + " KB"
 }
+
+// SendCurrent pushes whatever is on the local clipboard right now.
+func (e *Engine) SendCurrent() bool {
+	e.mu.Lock()
+	textOn, imageOn, server := e.SyncText, e.SyncImages, e.Server
+	e.mu.Unlock()
+	clip := localClip(textOn, imageOn)
+	if clip == nil || server == "" {
+		return false
+	}
+	if !e.push(server, clip) {
+		return false
+	}
+	e.mu.Lock()
+	e.lastHash = hashOf(clip.Kind, clip.PNG, clip.Text)
+	e.mu.Unlock()
+	e.remember(*clip)
+	return true
+}

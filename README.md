@@ -42,9 +42,13 @@ Turn on **Start with system** on each device so it is there after a reboot.
 
 ## The window
 
-Status in the top right, the host address, toggles for text and images, and a
-list of recent clips. Click a row to put it back on your clipboard. Closing the
-window keeps it running in the background.
+A native window with a tray icon, not a web page. Status, the host address,
+toggles for text, images and pause, the host switch, start with system, and a
+list of recent clips. Closing the window hides it to the tray; the tray menu
+has Open, Send clipboard now and Exit.
+
+On Linux the window opens in your browser on port 1770 when you launch the app
+from your applications menu. Nothing opens on its own at login.
 
 ## Privacy
 
