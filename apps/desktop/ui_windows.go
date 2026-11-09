@@ -36,7 +36,15 @@ type nativeUI struct {
 	cfg *Config
 }
 
-func startNative(e *Engine, cfg *Config) bool {
+func startNative(e *Engine, cfg *Config) (ok bool) {
+	// A crash inside the window must not take the sync down with it.
+	defer func() {
+		if r := recover(); r != nil {
+			logf("window failed: %v", r)
+			ok = false
+		}
+	}()
+
 	ui := &nativeUI{e: e, cfg: cfg}
 	if err := ui.create(); err != nil {
 		logf("cannot open the window: %v", err)
