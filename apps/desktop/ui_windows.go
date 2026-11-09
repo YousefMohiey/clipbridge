@@ -133,9 +133,9 @@ func (u *nativeUI) create() error {
 						OnCheckedChanged: func() { u.setToggle("pause", u.cbPause.Checked()) }},
 				},
 			},
-			CheckBox{AssignTo: &u.cbHost, Text: "Host here", ToolTipText: "Serve this clipboard to the network", Checked: u.cfg.Host,
+			CheckBox{AssignTo: &u.cbHost, Text: "Host here", Checked: u.cfg.Host,
 				OnCheckedChanged: func() { u.setHost(u.cbHost.Checked()) }},
-			CheckBox{AssignTo: &u.cbBoot, Text: "Autostart", ToolTipText: "Start ClipBridge when Windows starts", Checked: u.cfg.StartOnBoot,
+			CheckBox{AssignTo: &u.cbBoot, Text: "Autostart", Checked: u.cfg.StartOnBoot,
 				OnCheckedChanged: func() {
 			SetStartOnBoot(u.cbBoot.Checked())
 			u.cfg.StartOnBoot = u.cbBoot.Checked()
